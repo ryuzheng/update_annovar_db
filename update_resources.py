@@ -239,7 +239,7 @@ def main():
                 'Launching ANNOVAR convert2annovar on {}'.format(new_file)
             )
             avinput_file = os.path.splitext(os.path.splitext(new_file)[0])[0]
-            if os.path.exists('{0}/{1}_{2}.txt'.format(
+            if os.path.exists('{0}/{1}_{2}.txt.gz'.format(
                             resources_path, annovar_genome_version, avinput_file
                         )):
                 log(
@@ -247,6 +247,18 @@ def main():
                     'The latest version existed. Finish.'
                 )
                 exit(0)
+            log(
+                'INFO',
+                'Remove old version.'
+            )
+            result = subprocess.run(
+                [
+                    'rm',
+                    '{0}/*'.format(resources_path)
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT
+            )
             result = subprocess.run(
                 [
                     'perl',
@@ -337,6 +349,15 @@ def main():
                         os.remove('clinvar/{0}/clinvar_{1}.vcf.gz.md5'.format(genome_version, last_version))
                         os.remove('clinvar/{0}/clinvar_{1}.avinput'.format(genome_version, last_version))
                         os.remove('clinvar/{0}/clinvar_{1}.txt'.format(genome_version, last_version))
+                result = subprocess.run(
+                    [
+                        'gzip',
+                        '{0}/*.txt'.format(resources_path),
+                        '{0}/*.idx'.format(resources_path)
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT
+                )
 
     # not available
     # if args.dbsnp:
