@@ -8,6 +8,7 @@ import requests
 import subprocess
 import hashlib
 import time
+import glob
 import avinput2annovardb
 
 # connect to a distant resource and check whether or
@@ -249,13 +250,13 @@ def main():
                 exit(0)
             log(
                 'INFO',
-                'Remove old version.'
+                'Remove old version files.'
             )
             result = subprocess.run(
                 [
                     'rm',
-                    '{0}/*'.format(resources_path)
-                ],
+                    '--'
+                ] + glob.glob('{0}/*'.format(resources_path)),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT
             )
@@ -342,6 +343,19 @@ def main():
                             resources_path, os.path.basename(new_annovar_db_file)
                         )
                     )
+                    result = subprocess.run(
+                        [
+                            'gzip'
+                        ] + glob.glob('{0}/*.txt'.format(resources_path)) 
+                        + glob.glob('{0}/*.idx'.format(resources_path)),
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.STDOUT
+                    )
+                    if result.returncode == 0:
+                        log(
+                            'INFO',
+                            'gzip compress for output files'
+                        )
                     if last_version != 1:
                         # rm previous version
                         os.remove('clinvar/{0}/clinvar_{1}.vcf.gz'.format(genome_version, last_version))
@@ -349,15 +363,6 @@ def main():
                         os.remove('clinvar/{0}/clinvar_{1}.vcf.gz.md5'.format(genome_version, last_version))
                         os.remove('clinvar/{0}/clinvar_{1}.avinput'.format(genome_version, last_version))
                         os.remove('clinvar/{0}/clinvar_{1}.txt'.format(genome_version, last_version))
-                result = subprocess.run(
-                    [
-                        'gzip',
-                        '{0}/*.txt'.format(resources_path),
-                        '{0}/*.idx'.format(resources_path)
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT
-                )
 
     # not available
     # if args.dbsnp:
