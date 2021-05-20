@@ -239,6 +239,14 @@ def main():
                 'Launching ANNOVAR convert2annovar on {}'.format(new_file)
             )
             avinput_file = os.path.splitext(os.path.splitext(new_file)[0])[0]
+            if os.path.exists('{0}/{1}_{2}.txt'.format(
+                            resources_path, annovar_genome_version, avinput_file
+                        )):
+                log(
+                    'INFO',
+                    'The latest version existed. Finish.'
+                )
+                exit(0)
             result = subprocess.run(
                 [
                     'perl',
