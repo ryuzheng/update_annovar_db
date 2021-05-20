@@ -69,16 +69,21 @@ def get_new_ncbi_resource_file(http, resource_type, resource_dir, regexp, label,
         # Get all file names from clinvar website (html)
         resource_dir_html = http.request('GET', url).data.decode('utf-8')
         resource_dir_content = re.split('\n', resource_dir_html)
+        resource_date = "20190101"
+        last_obj = None
         for html in resource_dir_content:
             match_obj = re.search(rf'\"{regexp}{target_suffix}.gz\"', html)
             if match_obj:
                 # first is last
-                break
+                tmp_date = match_obj.group(1)
+                if time.strptime(tmp_date, "%Y%m%d") >= time.strptime(resource_date, "%Y%m%d"):
+                    resource_date = tmp_date
+                    last_obj = match_obj
     except Exception:
         log('WARNING', 'Unable to contact {0} {1}'.format(label, url))
         return 0, 0, 0
-    if match_obj:
-        resource_date = match_obj.group(1)
+    if last_obj:
+        resource_date = last_obj.group(1)
         # Read current clinvar md5
         try:
             resource_md5 = http.request(
@@ -179,9 +184,13 @@ def main():
                         help='Full path to annovar dir')
     parser.add_argument('-r', '--rename', required=False,
                         help='A name to replace the date in the ANNOVAR db file, e.g. latest')
+    parser.add_argument('-w', '--weekly', required=False, 
+                        action='store_true', default=False,
+                        help='Download weekly update clinvar vcf')
     args = parser.parse_args()
 
     # dbsnp_url = 'https://ftp.ncbi.nih.gov/snp/latest_release/'
+    resources_path = None
     if args.humandb_path:
         resources_path = args.humandb_path
     if args.genome_version:
@@ -190,12 +199,16 @@ def main():
         # creates clinvar/GRCh38 folder if does not exist
         if not os.path.isdir('clinvar/GRCh38'):
             os.mkdir('clinvar/GRCh38', 0o755)
-    clinvar_url = 'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_{}/'.format(genome_version)
+    weekly_path = ""
+    if args.weekly:
+        weekly_path = "weekly/"
+    clinvar_url = 'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_{}/{}'.format(genome_version, weekly_path)
     if args.annovar_path:
         annovar_path = args.annovar_path
         if annovar_path and \
                 not resources_path:
             resources_path = '{}/humandb'.format(annovar_path)
+    new_name = None
     if args.rename:
         new_name = args.rename
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
