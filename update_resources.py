@@ -262,6 +262,14 @@ def main():
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT
             )
+            if os.path.exists('{0}/{1}_{2}.txt.gz'.format(
+                            resources_path, annovar_genome_version, avinput_file
+                        )):
+                log(
+                    'INFO',
+                    'The latest version existed. Finish.'
+                )
+                exit(0)
             result = subprocess.run(
                 [
                     'perl',
